@@ -1,39 +1,33 @@
 local M = {}
 
--- TODO: make it come from config?
 local memory_path = "~/dump/"
 
-local function dump(topic)
+M.new = function()
 	local fname = vim.fn.localtime() .. ".md"
-	-- Is there a better way to create new file?
-	vim.cmd("! mkdir -p " .. memory_path .. topic.args)
-	local cmd = "e " .. memory_path .. topic.args .. fname
-	vim.cmd(cmd)
-end
-
-local function dump_clean()
-	local nvim_dump_buffs = vim.api.nvim_list_bufs()
-	for _, v in ipairs(nvim_dump_buffs) do
-		local buf_name = vim.api.nvim_buf_get_name(v)
-		if string.find(buf_name, "/dump/", 1, true) then
-			print("removing " .. buf_name)
-			vim.api.nvim_buf_delete(v, {})
+	local ok, err = vim.uv.fs_mkdir(vim.fn.expand(memory_path), 0755)
+	if not ok then
+		---@diagnostic disable-next-line: param-type-mismatch
+		if not string.find(err, "EEXIST") then
+			vim.notify("error creating file: " .. err, vim.log.levels.ERROR)
+			return
 		end
 	end
+
+	local fpath = memory_path .. fname
+	vim.cmd.e(fpath)
 end
 
--- TODO: find a better way to open the dump directory
-local function dump_list()
-	local cmd = "e " .. memory_path
-	vim.cmd(cmd)
+M.list = function()
+	require("telescope.builtin").find_files({
+		cwd = vim.fn.expand(memory_path),
+	})
 end
 
-function M.setup(opts)
+M.setup = function(opts)
 	opts = opts or {}
 
-	vim.api.nvim_create_user_command("Dump", dump, { nargs = "?" })
-	vim.api.nvim_create_user_command("DumpList", dump_list, {})
-	vim.api.nvim_create_user_command("DumpClean", dump_clean, {})
+	vim.api.nvim_create_user_command("Dump", M.new, {})
+	vim.api.nvim_create_user_command("DumpList", M.list, {})
 end
 
 return M
