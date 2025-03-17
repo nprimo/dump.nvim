@@ -23,34 +23,30 @@ local function md(path)
 	end
 end
 
+local preview_fn = function(self, entry, status)
+	local cmd = "cat " .. vim.fn.expand(memory_path) .. entry.value
+	local handle = io.popen(cmd)
+	if not handle then
+		vim.notify("error executing cat: ", vim.log.levels.ERROR)
+		return
+	end
+	local lines = {}
+	for line in handle:lines() do
+		table.insert(lines, line)
+	end
+	handle:close()
+
+	vim.api.nvim_buf_set_lines(self.state.bufnr, 0, 0, true, lines)
+	utils.highlighter(self.state.bufnr, "markdown")
+end
+
 M.new = function()
 	local curr_date = os.date("%Y%m%d")
 	local fname = curr_date .. ".md"
 	md(memory_path)
-
 	local fpath = memory_path .. fname
 	vim.cmd.e(fpath)
 end
-
-local previewer_opts = {
-	title = "preview",
-	define_preview = function(self, entry)
-		local cmd = "cat " .. vim.fn.expand(memory_path) .. entry.value
-		local handle = io.popen(cmd)
-		if not handle then
-			vim.notify("error executing cat: ", vim.log.levels.ERROR)
-			return
-		end
-		local lines = {}
-		for line in handle:lines() do
-			table.insert(lines, line)
-		end
-		handle:close()
-
-		vim.api.nvim_buf_set_lines(self.state.bufnr, 0, 0, true, lines)
-		utils.highlighter(self.state.bufnr, "markdown")
-	end,
-}
 
 M.list = function(opts)
 	opts = opts or {}
@@ -77,7 +73,10 @@ M.list = function(opts)
 				return true
 			end,
 
-			previewer = previewers.new_buffer_previewer(previewer_opts),
+			previewer = previewers.new_buffer_previewer({
+				title = "preview",
+				define_preview = preview_fn,
+			}),
 		})
 		:find()
 end
@@ -112,17 +111,16 @@ M.archive = function(opts)
 				return true
 			end,
 
-			previewer = previewers.new_buffer_previewer(previewer_opts),
+			previewer = previewers.new_buffer_previewer({
+				title = "preview",
+				define_preview = preview_fn,
+			}),
 		})
 		:find()
 end
 
 M.setup = function(opts)
-	opts = opts or {}
-
-	vim.api.nvim_create_user_command("Dump", M.new, {})
-	vim.api.nvim_create_user_command("DumpList", M.list, {})
-	vim.api.nvim_create_user_command("DumpArchive", M.archive, {})
+	-- opts = opts or {}
 end
 
 return M
