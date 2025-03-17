@@ -24,7 +24,8 @@ local function md(path)
 end
 
 M.new = function()
-	local fname = vim.fn.localtime() .. ".md"
+	local curr_date = os.date("%Y%m%d")
+	local fname = curr_date .. ".md"
 	md(memory_path)
 
 	local fpath = memory_path .. fname
