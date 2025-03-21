@@ -121,6 +121,10 @@ end
 
 M.setup = function(opts)
 	-- opts = opts or {}
+
+	vim.api.nvim_create_user_command("Dump", M.new, {})
+	vim.api.nvim_create_user_command("DumpList", M.list, {})
+	vim.api.nvim_create_user_command("DumpArchive", M.archive, {})
 end
 
 return M
