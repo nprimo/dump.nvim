@@ -42,8 +42,8 @@ local function preview_fn(self, entry, status)
 end
 
 M.new = function()
-	local curr_date = os.date("%Y%m%d")
-	local fname = curr_date .. ".md"
+	local curr_time = os.date("%Y%m%d%H%M%S")
+	local fname = curr_time .. ".md"
 	md(M._config.dump_path)
 	local fpath = M._config.dump_path .. fname
 	vim.cmd.e(fpath)
@@ -54,7 +54,7 @@ M.list = function(opts)
 	pickers
 		.new(opts, {
 			prompt_title = "Dump files",
-			finder = finders.new_oneshot_job({ "ls", vim.fn.expand(M._config.dump_path) }, {
+			finder = finders.new_oneshot_job({ "ls", "--sort=time", vim.fn.expand(M._config.dump_path) }, {
 				make_entry = function(entry)
 					return {
 						value = entry,
