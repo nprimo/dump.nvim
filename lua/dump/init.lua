@@ -8,9 +8,10 @@ local action_state = require("telescope.actions.state")
 
 local M = {}
 
--- TODO: make it come from config
-local memory_path = "~/dump/"
-local archive_path = memory_path .. ".archive/"
+M._config = {
+	dump_path = "~/dump/",
+	archive_path = "~/dump/.archive/",
+}
 
 local function md(path)
 	local ok, err = vim.uv.fs_mkdir(vim.fn.expand(path), 493) -- 0755 (octal notation)
@@ -23,8 +24,8 @@ local function md(path)
 	end
 end
 
-local preview_fn = function(self, entry, status)
-	local cmd = "cat " .. vim.fn.expand(memory_path) .. entry.value
+local function preview_fn(self, entry, status)
+	local cmd = "cat " .. vim.fn.expand(M._config.dump_path) .. entry.value
 	local handle = io.popen(cmd)
 	if not handle then
 		vim.notify("error executing cat: ", vim.log.levels.ERROR)
@@ -43,8 +44,8 @@ end
 M.new = function()
 	local curr_date = os.date("%Y%m%d")
 	local fname = curr_date .. ".md"
-	md(memory_path)
-	local fpath = memory_path .. fname
+	md(M._config.dump_path)
+	local fpath = M._config.dump_path .. fname
 	vim.cmd.e(fpath)
 end
 
@@ -53,7 +54,7 @@ M.list = function(opts)
 	pickers
 		.new(opts, {
 			prompt_title = "Dump files",
-			finder = finders.new_oneshot_job({ "ls", vim.fn.expand(memory_path) }, {
+			finder = finders.new_oneshot_job({ "ls", vim.fn.expand(M._config.dump_path) }, {
 				make_entry = function(entry)
 					return {
 						value = entry,
@@ -67,7 +68,7 @@ M.list = function(opts)
 				actions.select_default:replace(function()
 					actions.close(prompt_bufnr)
 					local selection = action_state.get_selected_entry()
-					local og_fpath = vim.fn.expand(memory_path) .. selection[1]
+					local og_fpath = vim.fn.expand(M._config.dump_path) .. selection[1]
 					vim.cmd.e(og_fpath)
 				end)
 				return true
@@ -86,7 +87,7 @@ M.archive = function(opts)
 	pickers
 		.new(opts, {
 			prompt_title = "Dump files",
-			finder = finders.new_oneshot_job({ "ls", vim.fn.expand(memory_path) }, {
+			finder = finders.new_oneshot_job({ "ls", vim.fn.expand(M._config.dump_path) }, {
 				make_entry = function(entry)
 					return {
 						value = entry,
@@ -100,9 +101,9 @@ M.archive = function(opts)
 				actions.select_default:replace(function()
 					actions.close(prompt_bufnr)
 					local selection = action_state.get_selected_entry()
-					local og_fpath = vim.fn.expand(memory_path) .. selection[1]
-					md(archive_path)
-					local ok, err = vim.uv.fs_rename(og_fpath, vim.fn.expand(archive_path) .. selection[1])
+					local og_fpath = vim.fn.expand(M._config.dump_path) .. selection[1]
+					md(M._config.archive_path)
+					local ok, err = vim.uv.fs_rename(og_fpath, vim.fn.expand(M._config.archive_path) .. selection[1])
 					if not ok then
 						vim.notify("error renaming file: " .. err, vim.log.levels.ERROR)
 						return false
@@ -120,11 +121,15 @@ M.archive = function(opts)
 end
 
 M.setup = function(opts)
-	-- opts = opts or {}
+	opts = opts or {}
 
 	vim.api.nvim_create_user_command("Dump", M.new, {})
 	vim.api.nvim_create_user_command("DumpList", M.list, {})
 	vim.api.nvim_create_user_command("DumpArchive", M.archive, {})
+
+	vim.keymap.set("n", "<leader>do", M.new, { desc = "[D]ump [O]pen" })
+	vim.keymap.set("n", "<leader>dl", M.list, { desc = "[D]ump [L]ist" })
+	vim.keymap.set("n", "<leader>da", M.archive, { desc = "[D]ump [A]rchive" })
 end
 
 return M

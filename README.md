@@ -6,7 +6,7 @@ A plugin to dump thoughts without leaving nvim.
 
 Provide the following commands:
 
-- `Dump` - create a new "dump" file;
+- `Dump` - open a "dump" file;
 - `DumpList` - list the current "dump" files with a preview (using
   [`telescope`](https://github.com/nvim-telescope/telescope.nvim));
 - `DumpArchive` - list the current "dump" files with a preview and archive the
