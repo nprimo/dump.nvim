@@ -54,7 +54,7 @@ M.list = function(opts)
 	pickers
 		.new(opts, {
 			prompt_title = "Dump files",
-			finder = finders.new_oneshot_job({ "ls", "--sort=time", vim.fn.expand(M._config.dump_path) }, {
+			finder = finders.new_oneshot_job({ "ls", "-1t", vim.fn.expand(M._config.dump_path) }, {
 				make_entry = function(entry)
 					return {
 						value = entry,
